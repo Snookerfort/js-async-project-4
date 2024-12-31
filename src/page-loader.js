@@ -1,26 +1,55 @@
-#!/usr/bin/env node
-import { program } from 'commander';
+import axios from 'axios';
+import {
+  access, mkdir, readdir, rmdir, writeFile,
+} from 'node:fs/promises';
 import { cwd } from 'node:process';
-import generatePageName from './generate-page-name.js';
-import downloadPage from './download-page.js';
-import getPackageJson from './get-package-json.js';
-import writeFile from './write-file.js';
+import { join } from 'node:path';
+import debugFactory from 'debug';
+import generateName from './generate-name.js';
+import ResourceLoader from './resource-loader.js';
 
-const command = (url, { output }) => downloadPage(url)
-  .then((response) => {
-    const fileName = generatePageName(url);
+const debug = debugFactory('page-loader');
 
-    return writeFile(response.data, fileName, output);
-  })
-  .then((filePath) => console.log(filePath))
-  .catch((error) => console.error(error));
+export default class {
+  constructor({ url, output }) {
+    this.url = url;
+    this.output = output ?? cwd();
+    this.pagePath = join(this.output, generateName(url, '.html'));
+    const resourceDirName = generateName(url, '_files');
+    this.resourceDirPath = join(output, resourceDirName);
+    this.resourceLoader = new ResourceLoader({
+      url: this.url,
+      resourceDirName,
+      pagePath: this.pagePath,
+      resourceDirPath: this.resourceDirPath,
+    });
+  }
 
-export default () => getPackageJson().then((packageJson) => {
-  program
-    .version(packageJson.version)
-    .argument('<url>')
-    .option('-o, --output [dir]', `output dir (default: "${cwd()}")`)
-    .action(command);
+  download() {
+    return this.createResourceFolder()
+      .then(() => this.downloadPage())
+      .then(() => this.resourceLoader.initialize())
+      .then(() => this.resourceLoader.extractResourcesFrom('img'))
+      .then(() => this.resourceLoader.extractResourcesFrom('link'))
+      .then(() => this.resourceLoader.extractResourcesFrom('script'))
+      .then(() => this.removeEmptyResourceFolder())
+      .then(() => console.log(this.pagePath));
+  }
 
-  return program.parseAsync(process.argv);
-});
+  downloadPage() {
+    return axios.get(this.url, { responseEncoding: 'binary', responseType: 'arraybuffer' })
+      .then((response) => writeFile(this.pagePath, response.data))
+      .catch((err) => console.log(err));
+  }
+
+  createResourceFolder() {
+    debug('Creating resource folder...');
+    return access(this.resourceDirPath).catch(() => mkdir(this.resourceDirPath));
+  }
+
+  removeEmptyResourceFolder() {
+    debug('Removing resource folder...');
+    return readdir(this.resourceDirPath)
+      .then((f) => (f.length === 0 ? rmdir(this.resourceDirPath) : undefined));
+  }
+}
