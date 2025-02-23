@@ -5,6 +5,7 @@ import {
 import { cwd } from 'node:process';
 import { join } from 'node:path';
 import debugFactory from 'debug';
+import Listr from 'listr';
 import generateName from './generate-name.js';
 import ResourceLoader from './resource-loader.js';
 
@@ -37,9 +38,11 @@ export default class {
   }
 
   downloadPage() {
-    return axios.get(this.url, { responseEncoding: 'binary', responseType: 'arraybuffer' })
+    const task = axios.get(this.url, { responseEncoding: 'binary', responseType: 'arraybuffer' })
       .then((response) => writeFile(this.pagePath, response.data))
       .catch((err) => console.log(err));
+
+    return new Listr([{ title: 'Downloading page...', task: () => task }]).run();
   }
 
   createResourceFolder() {

@@ -55,6 +55,6 @@ describe('Page loader', () => {
 
   test('output value should be correct', async () => {
     const { stdout } = await promisify(exec)(`page-loader -o ${testDirectory} ${url}`);
-    expect(stdout.trim()).toEqual(testPagePath);
+    expect(stdout.trim()).toContain(testPagePath);
   });
 });

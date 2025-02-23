@@ -3,6 +3,7 @@ import { loadBuffer } from 'cheerio';
 import { join, parse } from 'node:path';
 import axios from 'axios';
 import debugFactory from 'debug';
+import Listr from 'listr';
 import generateName from './generate-name.js';
 import getResourceAttributeName from './get-resource-attribute-name.js';
 
@@ -53,7 +54,8 @@ export default class {
     }));
 
     debug('Downloading resources from <%s> tags...', tagName);
-    return Promise.all(requests)
+
+    const task = Promise.all(requests)
       .then((responses) => responses.map(({ data }, index) => ({
         ...resourceSrcList[index],
         file: data,
@@ -67,5 +69,7 @@ export default class {
         debug('Overwriting a loaded page with local links...');
         return writeFile(this.pagePath, this.$.html());
       });
+
+    return new Listr([{ title: `Downloading resources from ${tagName} tags...`, task: () => task }]).run();
   }
 }
