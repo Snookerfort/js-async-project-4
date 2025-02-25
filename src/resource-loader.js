@@ -34,7 +34,7 @@ export default class {
       const attrName = getResourceAttributeName(tagName);
       const resourceSrc = currentEl.attr(attrName);
       const { origin } = this.url;
-      if (!resourceSrc || (URL.canParse(resourceSrc) && URL.parse(resourceSrc).origin !== origin)) {
+      if (!resourceSrc || (URL.canParse(resourceSrc) && new URL(resourceSrc).origin !== origin)) {
         return;
       }
       const url = URL.canParse(resourceSrc) ? resourceSrc : new URL(resourceSrc, origin).href;
