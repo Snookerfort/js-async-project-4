@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import { cwd } from 'node:process';
-import PageLoader from '../index.js';
+import pageLoader from '../index.js';
 import getPackageJson from '../src/get-package-json.js';
 
 const program = () => getPackageJson().then((packageJson) => {
@@ -9,10 +9,7 @@ const program = () => getPackageJson().then((packageJson) => {
     .version(packageJson.version)
     .argument('<url>')
     .option('-o, --output [dir]', `output dir (default: "${cwd()}")`, cwd())
-    .action((url, { output }) => {
-      const loader = new PageLoader({ url, output });
-      return loader.download();
-    });
+    .action((url, { output }) => pageLoader(url, output));
 
   return command.parseAsync(process.argv);
 });

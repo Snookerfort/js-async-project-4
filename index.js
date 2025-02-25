@@ -11,48 +11,44 @@ import ResourceLoader from './src/resource-loader.js';
 
 const debug = debugFactory('page-loader');
 
-export default class {
-  constructor({ url, output }) {
-    this.url = url;
-    this.output = output ?? cwd();
-    this.pagePath = join(this.output, generateName(url, '.html'));
-    const resourceDirName = generateName(url, '_files');
-    this.resourceDirPath = join(output, resourceDirName);
-    this.resourceLoader = new ResourceLoader({
-      url: this.url,
-      resourceDirName,
-      pagePath: this.pagePath,
-      resourceDirPath: this.resourceDirPath,
-    });
-  }
+const downloadPage = (url, pagePath) => {
+  const task = axios.get(url, { responseEncoding: 'binary', responseType: 'arraybuffer' })
+    .then((response) => writeFile(pagePath, response.data))
+    .catch((err) => console.log(err));
 
-  download() {
-    return this.createResourceFolder()
-      .then(() => this.downloadPage())
-      .then(() => this.resourceLoader.initialize())
-      .then(() => this.resourceLoader.extractResourcesFrom('img'))
-      .then(() => this.resourceLoader.extractResourcesFrom('link'))
-      .then(() => this.resourceLoader.extractResourcesFrom('script'))
-      .then(() => this.removeEmptyResourceFolder())
-      .then(() => console.log(this.pagePath));
-  }
+  return new Listr([{ title: 'Downloading page...', task: () => task }]).run();
+};
 
-  downloadPage() {
-    const task = axios.get(this.url, { responseEncoding: 'binary', responseType: 'arraybuffer' })
-      .then((response) => writeFile(this.pagePath, response.data))
-      .catch((err) => console.log(err));
+const createResourceFolder = (resourceDirPath) => {
+  debug('Creating resource folder...');
+  return access(resourceDirPath).catch(() => mkdir(resourceDirPath));
+};
 
-    return new Listr([{ title: 'Downloading page...', task: () => task }]).run();
-  }
+const removeEmptyResourceFolder = (resourceDirPath) => {
+  debug('Removing resource folder...');
+  return readdir(resourceDirPath)
+    .then((f) => (f.length === 0 ? rmdir(resourceDirPath) : undefined));
+};
 
-  createResourceFolder() {
-    debug('Creating resource folder...');
-    return access(this.resourceDirPath).catch(() => mkdir(this.resourceDirPath));
-  }
+export default (url, output = cwd()) => {
+  debug('URL: ', url);
+  debug('Output: ', output);
+  const resourceDirName = generateName(url, '_files');
+  const resourceDirPath = join(output, resourceDirName);
+  const pagePath = join(output, generateName(url, '.html'));
+  const resourceLoader = new ResourceLoader({
+    url,
+    resourceDirName,
+    resourceDirPath,
+    pagePath: join(output, generateName(url, '.html')),
+  });
 
-  removeEmptyResourceFolder() {
-    debug('Removing resource folder...');
-    return readdir(this.resourceDirPath)
-      .then((f) => (f.length === 0 ? rmdir(this.resourceDirPath) : undefined));
-  }
-}
+  return createResourceFolder(resourceDirPath)
+    .then(() => downloadPage(url, pagePath))
+    .then(() => resourceLoader.initialize())
+    .then(() => resourceLoader.extractResourcesFrom('img'))
+    .then(() => resourceLoader.extractResourcesFrom('link'))
+    .then(() => resourceLoader.extractResourcesFrom('script'))
+    .then(() => removeEmptyResourceFolder(resourceDirPath))
+    .then(() => console.log(pagePath));
+};
