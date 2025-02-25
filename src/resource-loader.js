@@ -15,7 +15,7 @@ export default class {
   constructor(options) {
     this.pagePath = options.pagePath;
     this.resourceDirPath = options.resourceDirPath;
-    this.url = options.url;
+    this.url = new URL(options.url);
     this.resourceDirName = options.resourceDirName;
   }
 
@@ -33,7 +33,7 @@ export default class {
       const currentEl = this.$(el);
       const attrName = getResourceAttributeName(tagName);
       const resourceSrc = currentEl.attr(attrName);
-      const { origin } = URL.parse(this.url);
+      const { origin } = this.url;
       if (!resourceSrc || (URL.canParse(resourceSrc) && URL.parse(resourceSrc).origin !== origin)) {
         return;
       }
