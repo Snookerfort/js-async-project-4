@@ -10,8 +10,6 @@ import getResourceAttributeName from './get-resource-attribute-name.js';
 const debug = debugFactory('page-loader');
 
 export default class {
-  $ = null;
-
   constructor(options) {
     this.pagePath = options.pagePath;
     this.resourceDirPath = options.resourceDirPath;
