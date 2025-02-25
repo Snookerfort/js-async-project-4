@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import { Command } from 'commander';
 import { cwd } from 'node:process';
-import getPackageJson from './get-package-json.js';
-import PageLoader from './page-loader.js';
+import PageLoader from '../index.js';
+import getPackageJson from '../src/get-package-json.js';
 
-export default () => getPackageJson().then((packageJson) => {
-  const program = new Command()
+const program = () => getPackageJson().then((packageJson) => {
+  const command = new Command()
     .version(packageJson.version)
     .argument('<url>')
     .option('-o, --output [dir]', `output dir (default: "${cwd()}")`, cwd())
@@ -14,5 +14,9 @@ export default () => getPackageJson().then((packageJson) => {
       return loader.download();
     });
 
-  return program.parseAsync(process.argv);
+  return command.parseAsync(process.argv);
 });
+
+program();
+
+export default program;

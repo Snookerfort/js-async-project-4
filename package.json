@@ -24,7 +24,7 @@
     "*.js": "eslint --fix"
   },
   "bin": {
-    "page-loader": "index.js"
+    "page-loader": "bin/page-loader.js"
   },
   "dependencies": {
     "@eslint/eslintrc": "^3.1.0",

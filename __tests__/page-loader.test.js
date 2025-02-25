@@ -9,7 +9,7 @@ import { promisify } from 'node:util';
 import { jest } from '@jest/globals';
 import { format } from 'prettier';
 
-import pageLoader from '../src/program.js';
+import pageLoader from '../bin/page-loader.js';
 
 describe('Page loader', () => {
   const testDirectory = join(cwd(), 'temp');
