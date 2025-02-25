@@ -2,8 +2,8 @@ export default (name, suffix = '') => {
   let sourceStr = name;
 
   if (URL.canParse(name)) {
-    const { host, pathname, search } = URL.parse(name);
-    sourceStr = `${host}${pathname}${search}`;
+    const url = new URL(name);
+    sourceStr = `${url.host}${url.pathname}${url.search}`;
   }
 
   return sourceStr
